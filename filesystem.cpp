@@ -20,7 +20,7 @@ string  getInputText();
 int     locateFreeSpace(fstream &infileSystem, int contentLength);
 bool    writeFileToLocation(fstream &infileSystem, int posInMemTable,
                             int contentLength, string content);
-void    writeToFAT(fstream &infileSystem, string fileName, int startPos, int contentLength)
+void    writeToFAT(fstream &infileSystem, string fileName, int startPos, int contentLength);
 
 
 
@@ -336,7 +336,7 @@ int locateFreeSpace(fstream &infileSystem, int contentLength)
             zCounter++;                                     // count consecutive zeros, which mark open blocks
             if (zCounter >= numBlocksNeeded)                // if enough memory exists
             {
-                return posMarker;                           // return the block which is empty            
+                return (posMarker+1) - numBlocksNeeded;     // return the first block which is empty       
             }
         }
         else
@@ -350,16 +350,21 @@ int locateFreeSpace(fstream &infileSystem, int contentLength)
 //============================================================================================
 bool writeFileToLocation(fstream &infileSystem, int posInMemTable,
                          int contentLength, string content)
+
 {
     int  numBlocksNeeded = (contentLength + BLOCK_SIZE- 1) / BLOCK_SIZE;             // always round integer up as full block needed, fragmentation -> :*( 
 
-    infileSystem.seekg(MEMORY_START + ((posInMemTable)*BLOCK_SIZE));  // start of mem table, plus blocks to get to file spot
+    int writeStart = MEMORY_START + ((posInMemTable)*BLOCK_SIZE);
+    cout << "Write start is " << writeStart << endl;
+
+    infileSystem.seekg(writeStart);  // start of mem table, plus blocks to get to file spot
     infileSystem.write(content.c_str(),content.length());    
     infileSystem.seekg(MEM_TABLE_START + posInMemTable);
 
     string ones;
-    ones.append('1',numBlocksNeeded);
-    infileSystem.write(ones.c_str(),ones.length()-1);
+    ones.append(numBlocksNeeded,'1');
+    cout << "Ones: " << ones;
+    infileSystem.write(ones.c_str(),ones.length());
     if(!infileSystem)
     {
         cout << "Wahr?";
